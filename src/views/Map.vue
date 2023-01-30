@@ -10,6 +10,7 @@
 			</v-btn>
 			<v-btn @click="showAllRoutes" rounded>Show Routes</v-btn>
 			<!-- <v-btn @click="showAllRoutes">Hide Routes</v-btn> -->
+			{{ listenForUsers }}
 		</div>
 
 		<div class="map-holder">
@@ -95,6 +96,8 @@
 				lat: 0,
 				lng: 0,
 				userLocations: [],
+				currentMarkers: [],
+				updateSource: {},
 			};
 		},
 
@@ -113,10 +116,13 @@
 			this.initializeMap();
 		},
 
+		destroyed() {
+			clearInterval(this.updateSource);
+		},
+
 		methods: {
 			startLocationUpdates() {
 				if (navigator.geolocation) {
-					console.log("hey");
 					navigator.geolocation.watchPosition(
 						(position) => {
 							this.lng = position.coords.longitude;
@@ -133,7 +139,6 @@
 									username: this.user.username,
 									coordinates: [this.lng, this.lat],
 								});
-							console.log([this.lng, this.lat]);
 						},
 						(error) => {
 							console.log(error.message);
@@ -176,7 +181,6 @@
 							});
 
 							this.userLocations = userLocations;
-							console.log(this.userLocations);
 						} else {
 							console.log("node do not exist");
 							this.snackbar = true;
@@ -203,7 +207,6 @@
 				mapboxgl.accessToken = this.access_token;
 				if (navigator.geolocation) {
 					navigator.geolocation.getCurrentPosition((position) => {
-						console.log(position);
 						this.lng = position.coords.longitude;
 						this.lat = position.coords.latitude;
 						db.database()
@@ -303,13 +306,19 @@
 			},
 
 			addFriendsLocations() {
+				if (this.currentMarkers.length != 0) {
+					for (var i = this.currentMarkers.length - 1; i >= 0; i--) {
+						this.currentMarkers[i].remove();
+					}
+				}
+
 				for (const marker of this.userLocations) {
 					// Create a DOM element for each marker.
 					const el = document.createElement("div");
-					const sp = document.createElement("span");
+
 					const width = 40;
 					const height = 40;
-					// sp.textContent
+
 					el.textContent = `${marker.username.split(" ")[0]}`;
 					el.className = "marker";
 					el.style.backgroundColor = "#28066f";
@@ -319,18 +328,12 @@
 						"0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)";
 					el.style.justifyContent = "center";
 					el.style.alignItems = "center";
-					// el.style.content = `asd`;
-					// el.style.border = "1px solid black";
+
 					el.style.width = `${width}px`;
 					el.style.height = `${height}px`;
 					el.style.backgroundSize = "100%";
 					el.style.borderRadius = "100%";
 					el.style.cursor = "pointer";
-
-					const popup = new mapboxgl.Popup({
-						closeButton: false,
-						closeOnClick: false,
-					});
 
 					// el.addEventListener("click", () => {
 					// 	this.map.flyTo({
@@ -368,15 +371,15 @@
 					// });
 
 					// Add markers to the map.
-					console.log("markerssss");
-					console.log(marker.username);
-					new mapboxgl.Marker(el)
+					const onemarker = new mapboxgl.Marker(el)
 						.setLngLat(marker.coordinates)
 						.setPopup(
 							new mapboxgl.Popup({ offset: 25 }) // add popups
 								.setHTML(`<div style="color: black;">${marker.username}</div>`)
 						)
 						.addTo(this.map);
+
+					this.currentMarkers.push(onemarker);
 				}
 			},
 
@@ -487,6 +490,14 @@
 					this.customMarker.remove();
 					this.removeAllRoutes();
 				}
+			},
+		},
+
+		computed: {
+			listenForUsers: function () {
+				this.updateSource = setInterval(async () => {
+					this.addFriendsLocations();
+				}, 1000);
 			},
 		},
 	};
