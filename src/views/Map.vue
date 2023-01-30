@@ -4,7 +4,7 @@
 		<v-btn @click="removeAllRoutes">Remove</v-btn>
 		<v-btn @click="addRoute">Add route</v-btn>
 		<v-btn @click="removeCustomMarker">Remove custom route</v-btn> -->
-		<div class="sectionHeader">
+		<div class="sectionHeader" v-if="!loading">
 			<v-btn rounded small color="#c51ad5" dark>
 				{{ this.userLocations.length }} people responded.
 			</v-btn>
