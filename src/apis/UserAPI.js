@@ -1,5 +1,5 @@
 import axios from "axios";
-const url = "http://localhost:8000/users";
+const url = "https://pathfinder-server.onrender.com/users";
 
 export default class API {
 	async login(credentials) {
