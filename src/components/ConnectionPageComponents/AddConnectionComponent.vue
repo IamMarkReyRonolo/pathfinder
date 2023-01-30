@@ -204,8 +204,8 @@
 	}
 	h2 {
 		padding: 20px 10px;
-		font-size: 20px;
-		font-weight: lighter;
+		font-size: 24px;
+
 		text-align: center;
 	}
 

@@ -10,7 +10,9 @@ export const useUserStore = defineStore("userStore", {
 		success: false,
 		newUser: null,
 		connections: [],
+		notifications: [],
 		specificConnection: {},
+		findMeRoomData: {},
 	}),
 	getters: {
 		getActiveConnections() {
@@ -96,9 +98,47 @@ export const useUserStore = defineStore("userStore", {
 			this.connections = result.connections;
 		},
 
+		async getAllUserNotifications() {
+			const result = await UserAPI.prototype.getAllUserNotifications();
+			this.notifications = result.notifications;
+		},
+
+		async activateFindMe(friend_ids) {
+			const code = this.generateId(7);
+			// const notification = {
+			// 	notification_title: "Find Me",
+			// 	notification_message: `${this.user.full_name} activated Find Me. Respond Now.`,
+			// 	friend_ids: friend_ids,
+			// 	code: code,
+			// };
+			const data = {
+				room_code: code,
+				users_responded: [],
+				users_requested: friend_ids,
+			};
+			const result = await UserAPI.prototype.activateFindMe(data);
+			console.log(result);
+			return result;
+		},
+
+		async respondeToFindMe(code) {
+			const result = await UserAPI.prototype.respondeToFindMe(code);
+			return result;
+		},
+
+		async terminateFindMe(code) {
+			const result = await UserAPI.prototype.terminateFindMe(code);
+			return result;
+		},
+
 		async findSpecificConnection(username) {
 			const result = await UserAPI.prototype.findSpecificConnection(username);
 			this.specificConnection = result;
+		},
+
+		async checkForActiveFindMe() {
+			const result = await UserAPI.prototype.checkForActiveFindMe();
+			return result;
 		},
 
 		async requestConnection(id) {
@@ -111,6 +151,16 @@ export const useUserStore = defineStore("userStore", {
 
 		async acceptConnection(id) {
 			const result = await UserAPI.prototype.acceptConnection(id);
+		},
+
+		generateId(len) {
+			var arr = new Uint8Array((len || 40) / 2);
+			window.crypto.getRandomValues(arr);
+			return Array.from(arr, this.dec2hex).join("");
+		},
+
+		dec2hex(dec) {
+			return dec.toString(16).padStart(2, "0");
 		},
 	},
 });

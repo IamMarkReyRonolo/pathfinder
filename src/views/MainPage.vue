@@ -10,21 +10,12 @@
 						@openNav="openBurger = true"
 						v-if="openBurger"
 					/>
-					<Notifications
-						:showNotifications="showNotifications"
-						v-if="showNotifications"
-						@closeNotifications="showNotifications = false"
-					/>
+
 					<v-btn fab small id="drawerBtn" @click="openBurger = true">
 						<v-avatar size="40" color="white" v-if="!openBurger"
 							><img src="../assets/dp.png" alt="" /></v-avatar
 					></v-btn>
 					<h2>PathFinder</h2>
-				</div>
-				<div class="rightCon">
-					<v-btn fab small @click="showNotifications = true" text
-						><v-icon size="30" color="white">mdi-bell-outline</v-icon></v-btn
-					>
 				</div>
 			</div>
 			<div class="viewCon">
@@ -45,10 +36,9 @@
 
 <script>
 	import SideNav from "../components/MainPageComponents/SideNav.vue";
-	import Notifications from "../components/MainPageComponents/Notifications.vue";
 	import { useUserStore } from "../store/UserStore.js";
 	export default {
-		components: { SideNav, Notifications },
+		components: { SideNav },
 		async created() {
 			this.loading = true;
 			this.fetched = false;
@@ -69,7 +59,6 @@
 		data: () => ({
 			userStore: useUserStore(),
 			openBurger: false,
-			showNotifications: false,
 			fetched: true,
 			loading: false,
 			error: false,

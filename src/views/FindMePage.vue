@@ -15,19 +15,23 @@
 				rounded
 				:dark="selected.length != 0"
 				:disabled="selected.length == 0"
+				@click="activateFindMe"
+				:loading="findMeLoading"
 				>Proceed</v-btn
 			>
 		</div>
 		<div class="fetched" v-if="fetched">
 			{{ listenForSelection }}
-			<div class="componentHeader">
+			<div
+				class="componentHeader"
+				v-if="userStore.getActiveConnections.length != 0"
+			>
 				<div>Select Connections</div>
 				<v-checkbox
 					v-model="allSelected"
 					color="white"
 					dark
 					label="Select All"
-					v-if="userStore.getActiveConnections.length != 0"
 				></v-checkbox>
 			</div>
 
@@ -99,8 +103,28 @@
 			error: false,
 			selected: [],
 			allSelected: false,
+			findMeLoading: false,
+			findMeError: false,
 		}),
-		methods: {},
+		methods: {
+			async activateFindMe() {
+				try {
+					this.findMeLoading = true;
+					this.findMeError = false;
+					const result = await this.userStore.activateFindMe(this.selected);
+					this.findMeLoading = false;
+					this.findMeError = false;
+					console.log(result);
+					this.userStore.findMeRoomData.room_code = result.notification.code;
+					this.userStore.findMeRoomData.user_id = "host";
+					this.$router.push("/room");
+				} catch (error) {
+					console.log(error);
+					this.findMeLoading = false;
+					this.findMeError = true;
+				}
+			},
+		},
 		watch: {
 			allSelected() {
 				if (this.allSelected) {
@@ -134,17 +158,16 @@
 <style scoped>
 	h2 {
 		padding: 10px 0px;
-		font-size: 20px;
-		font-weight: lighter;
+		font-size: 30px;
 	}
 
 	.findMePageCon {
-		padding: 10px 0px;
-		width: 300px;
+		width: 350px;
 		margin: auto;
+		padding: 0px 10px;
 	}
 	.pageDetails {
-		font-size: 14px;
+		font-size: 16px;
 	}
 
 	.findMeBtn {

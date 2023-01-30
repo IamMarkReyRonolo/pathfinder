@@ -320,14 +320,15 @@
 <style scoped>
 	h2 {
 		padding: 10px 0px;
-		font-size: 20px;
-		font-weight: lighter;
+		/* font-size: 20px;
+		font-weight: lighter; */
+		font-size: 30px;
 	}
 
 	.connectionPageCon {
-		padding: 10px 0px;
-		width: 300px;
+		width: 350px;
 		margin: auto;
+		padding: 0px 10px;
 	}
 
 	.pageHeader {

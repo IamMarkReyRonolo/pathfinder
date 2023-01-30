@@ -8,6 +8,7 @@ import FindMePage from "../views/FindMePage";
 import LogInPage from "../views/LogInPage.vue";
 import SignUpPage from "../views/SignUpPage.vue";
 import ProfilePage from "../views/ProfilePage.vue";
+import FindMeRoom from "../views/FindMeRoom";
 import NotFoundPage from "../components/UtilityComponents/NotFoundPage.vue";
 Vue.use(VueRouter);
 
@@ -48,6 +49,15 @@ const routes = [
 				path: "profile",
 				name: "profile",
 				component: ProfilePage,
+				props: {
+					header: true,
+					content: true,
+				},
+			},
+			{
+				path: "room",
+				name: "room",
+				component: FindMeRoom,
 				props: {
 					header: true,
 					content: true,

@@ -19,13 +19,37 @@ export default class API {
 	}
 
 	async getAllConnections() {
-		const staff = await axios.get(url + "/connections");
-		return staff.data;
+		const user = await axios.get(url + "/connections");
+		return user.data;
+	}
+	async getAllUserNotifications() {
+		const user = await axios.get(url + "/notifications");
+		return user.data;
+	}
+
+	async checkForActiveFindMe() {
+		const user = await axios.get(url + "/check_for_active_find_me");
+		return user.data;
+	}
+
+	async activateFindMe(data) {
+		const user = await axios.post(url + "/activate_find_me", data);
+		return user.data;
+	}
+
+	async respondeToFindMe(code) {
+		const user = await axios.patch(url + "/respond_to_findme/" + code);
+		return user.data;
+	}
+
+	async terminateFindMe(code) {
+		const user = await axios.delete(url + "/terminate_find_me/" + code);
+		return user.data;
 	}
 
 	async findSpecificConnection(username) {
-		const staff = await axios.get(url + "/find/" + username);
-		return staff.data;
+		const user = await axios.get(url + "/find/" + username);
+		return user.data;
 	}
 
 	async requestConnection(uuid) {

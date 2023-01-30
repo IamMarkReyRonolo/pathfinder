@@ -1,15 +1,23 @@
 <template>
 	<div class="main">
-		<v-btn @click="showAllRoutes">Click</v-btn>
+		<!-- <v-btn @click="showAllRoutes">Click</v-btn>
 		<v-btn @click="removeAllRoutes">Remove</v-btn>
 		<v-btn @click="addRoute">Add route</v-btn>
-		<v-btn @click="removeCustomMarker">Remove custom route</v-btn>
+		<v-btn @click="removeCustomMarker">Remove custom route</v-btn> -->
+		<div class="sectionHeader">
+			<v-btn rounded small color="#c51ad5" dark>
+				{{ this.userLocations.length }} people responded.
+			</v-btn>
+			<v-btn @click="showAllRoutes" rounded>Show Routes</v-btn>
+			<!-- <v-btn @click="showAllRoutes">Hide Routes</v-btn> -->
+		</div>
+
 		<div class="map-holder">
 			<div class="loading" v-if="loading">
 				<div class="loadingDiv">
 					<v-progress-circular :size="200" color="primary" indeterminate>
 						<div class="loadingAnim">
-							<h2 class>PathFinder</h2>
+							<h2>PathFinder</h2>
 							<div class="iconDiv">
 								<img src="../assets/icon.png" alt="" />
 							</div>
@@ -18,7 +26,7 @@
 				</div>
 			</div>
 		</div>
-		<div id="map" v-if="!loading"></div>
+		<div id="map"></div>
 	</div>
 </template>
 
@@ -27,11 +35,18 @@
 	import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 	import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 	import axios from "axios";
+	import db from "../db";
+	import { useUserStore } from "../store/UserStore";
 
 	export default {
+		props: {
+			sessionCode: String,
+		},
 		data() {
 			return {
+				userStore: useUserStore(),
 				loading: false,
+				fetched: false,
 				location: "",
 				access_token:
 					"pk.eyJ1Ijoibm92ZW56YW1vcmEiLCJhIjoiY2xhZTI3dWQzMHB4OTNwczQ3ZjI2MWtjdSJ9.Xuj3yEJzk9DZMf00LCEZLQ",
@@ -76,23 +91,132 @@
 					],
 				},
 				customMarker: null,
+				user: {},
+				lat: 0,
+				lng: 0,
+				userLocations: [],
 			};
 		},
 
 		async mounted() {
 			this.loading = true;
 
-			setTimeout(() => {
-				this.initializeMap();
-				this.loading = false;
-			}, 1500);
+			// setTimeout(() => {
+			// 	this.getUserLocations();
+			// 	this.startLocationUpdates();
+			// 	this.initializeMap();
+			// 	this.loading = false;
+			// }, 1500);
+
+			this.getUserLocations();
+			this.startLocationUpdates();
+			this.initializeMap();
 		},
 
 		methods: {
+			startLocationUpdates() {
+				if (navigator.geolocation) {
+					console.log("hey");
+					navigator.geolocation.watchPosition(
+						(position) => {
+							this.lng = position.coords.longitude;
+							this.lat = position.coords.latitude;
+
+							db.database()
+								.ref(
+									"locationUsers/" +
+										this.sessionCode +
+										"/" +
+										this.userStore.user.uuid
+								)
+								.set({
+									username: this.user.username,
+									coordinates: [this.lng, this.lat],
+								});
+							console.log([this.lng, this.lat]);
+						},
+						(error) => {
+							console.log(error.message);
+						}
+					);
+				}
+			},
+			async getUserLocations() {
+				try {
+					this.fetched = false;
+
+					this.user.username = this.userStore.user.full_name;
+					db.database()
+						.ref(
+							"locationUsers/" +
+								this.sessionCode +
+								"/" +
+								this.userStore.user.uuid
+						)
+						.set({
+							username: this.user.username,
+							coordinates: [this.lng, this.lat],
+						});
+
+					const locationsRef = db
+						.database()
+						.ref("locationUsers/" + this.sessionCode);
+
+					// const location = {
+					// 	username: this.user.username,
+					// 	coordinates: [this.lat, this.lng],
+					// };
+					// locationsRef.push(location);
+					locationsRef.on("value", (snapshot) => {
+						if (snapshot.exists()) {
+							const data = snapshot.val();
+							let userLocations = [];
+							Object.keys(data).forEach((user) => {
+								userLocations.push(data[user]);
+							});
+
+							this.userLocations = userLocations;
+							console.log(this.userLocations);
+						} else {
+							console.log("node do not exist");
+							this.snackbar = true;
+							this.message = "Find Me event has ended.";
+							this.status = "Success";
+							setTimeout(() => {
+								this.$router.push("/home");
+							}, 1500);
+						}
+					});
+
+					setTimeout(() => {
+						this.fetched = true;
+					}, 1000);
+				} catch (error) {
+					console.log(error);
+					this.fetched = false;
+					this.loading = false;
+					this.error = false;
+				}
+			},
+
 			async initializeMap() {
 				mapboxgl.accessToken = this.access_token;
 				if (navigator.geolocation) {
 					navigator.geolocation.getCurrentPosition((position) => {
+						console.log(position);
+						this.lng = position.coords.longitude;
+						this.lat = position.coords.latitude;
+						db.database()
+							.ref(
+								"locationUsers/" +
+									this.sessionCode +
+									"/" +
+									this.userStore.user.uuid
+							)
+							.set({
+								username: this.user.username,
+								coordinates: [this.lng, this.lat],
+							});
 						this.createMap(position);
 					});
 				} else {
@@ -104,17 +228,20 @@
 					const lng = position.coords.longitude;
 					const lat = position.coords.latitude;
 					this.center = [lng, lat];
+
 					this.map = new mapboxgl.Map({
 						container: "map",
 						style: "mapbox://styles/mapbox/streets-v11",
 						center: this.center,
-						zoom: 2,
+						zoom: 1,
 						projection: "globe",
 					});
 
 					this.map.on("style.load", () => {
+						this.loading = false;
 						this.map.setFog({});
 					});
+
 					this.map.on("load", () => {
 						this.addFriendsLocations();
 					});
@@ -127,21 +254,21 @@
 			},
 
 			addMapControls() {
-				this.map.addControl(
-					new MapboxGeocoder({
-						accessToken: this.access_token,
-						mapboxgl: mapboxgl,
-						marker: true,
-					}).on("result", (e) => {
-						new mapboxgl.Marker({
-							draggable: false,
-							color: "#D80739",
-						})
-							.setLngLat(e.result.center)
-							.addTo(this.map);
-						this.center = e.result.center;
-					})
-				);
+				// this.map.addControl(
+				// 	new MapboxGeocoder({
+				// 		accessToken: this.access_token,
+				// 		mapboxgl: mapboxgl,
+				// 		marker: true,
+				// 	}).on("result", (e) => {
+				// 		new mapboxgl.Marker({
+				// 			draggable: false,
+				// 			color: "#D80739",
+				// 		})
+				// 			.setLngLat(e.result.center)
+				// 			.addTo(this.map);
+				// 		this.center = e.result.center;
+				// 	})
+				// );
 				this.map.addControl(
 					new mapboxgl.GeolocateControl({
 						positionOptions: {
@@ -176,13 +303,24 @@
 			},
 
 			addFriendsLocations() {
-				for (const marker of this.geojson.features) {
+				for (const marker of this.userLocations) {
 					// Create a DOM element for each marker.
 					const el = document.createElement("div");
-					const width = marker.properties.iconSize[0];
-					const height = marker.properties.iconSize[1];
+					const sp = document.createElement("span");
+					const width = 40;
+					const height = 40;
+					// sp.textContent
+					el.textContent = `${marker.username.split(" ")[0]}`;
 					el.className = "marker";
-					el.style.backgroundImage = `url(https://placekitten.com/g/${width}/${height}/)`;
+					el.style.backgroundColor = "#28066f";
+					el.style.color = "white";
+					el.style.display = "flex";
+					el.style.boxShadow =
+						"0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)";
+					el.style.justifyContent = "center";
+					el.style.alignItems = "center";
+					// el.style.content = `asd`;
+					// el.style.border = "1px solid black";
 					el.style.width = `${width}px`;
 					el.style.height = `${height}px`;
 					el.style.backgroundSize = "100%";
@@ -194,44 +332,50 @@
 						closeOnClick: false,
 					});
 
-					el.addEventListener("click", () => {
-						this.map.flyTo({
-							center: marker.geometry.coordinates,
-						});
-						this.removeAllRoutes();
-						this.apiCall(
-							this.geojson.features[0].geometry.coordinates[0],
-							this.geojson.features[0].geometry.coordinates[1],
-							marker.geometry.coordinates[0],
-							marker.geometry.coordinates[1],
-							marker.properties.name
-						);
-					});
+					// el.addEventListener("click", () => {
+					// 	this.map.flyTo({
+					// 		center: marker.coordinates,
+					// 	});
+					// 	this.removeAllRoutes();
+					// 	this.apiCall(
+					// 		this.userLocations[0].coordinates[0],
+					// 		this.userLocations[0].coordinates[1],
+					// 		marker.coordinates[0],
+					// 		marker.coordinates[1],
+					// 		marker.username
+					// 	);
+					// });
 
-					el.addEventListener("mouseenter", () => {
-						// Copy coordinates array.
-						const coordinates = marker.geometry.coordinates.slice();
-						const description = marker.properties.name;
+					// el.addEventListener("mouseenter", () => {
+					// 	// Copy coordinates array.
+					// 	const coordinates = marker.coordinates.slice();
+					// 	const description = marker.username;
 
-						// Ensure that if the map is zoomed out such that multiple
-						// copies of the feature are visible, the popup appears
-						// over the copy being pointed to.
-						// while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-						// 	coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-						// }
+					// 	// Ensure that if the map is zoomed out such that multiple
+					// 	// copies of the feature are visible, the popup appears
+					// 	// over the copy being pointed to.
+					// 	// while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+					// 	// 	coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+					// 	// }
 
-						// Populate the popup and set its coordinates
-						// based on the feature found.
-						popup.setLngLat(coordinates).setHTML(description).addTo(this.map);
-					});
+					// 	// Populate the popup and set its coordinates
+					// 	// based on the feature found.
+					// 	popup.setLngLat(coordinates).setHTML(description).addTo(this.map);
+					// });
 
-					el.addEventListener("mouseleave", () => {
-						popup.remove();
-					});
+					// el.addEventListener("mouseleave", () => {
+					// 	popup.remove();
+					// });
 
 					// Add markers to the map.
+					console.log("markerssss");
+					console.log(marker.username);
 					new mapboxgl.Marker(el)
-						.setLngLat(marker.geometry.coordinates)
+						.setLngLat(marker.coordinates)
+						.setPopup(
+							new mapboxgl.Popup({ offset: 25 }) // add popups
+								.setHTML(`<div style="color: black;">${marker.username}</div>`)
+						)
 						.addTo(this.map);
 				}
 			},
@@ -275,13 +419,16 @@
 
 			showAllRoutes() {
 				this.removeAllRoutes();
-				this.geojson.features.forEach((marker) => {
+				this.userLocations.forEach((marker) => {
+					this.map.flyTo({
+						center: marker.coordinates,
+					});
 					this.apiCall(
-						this.geojson.features[0].geometry.coordinates[0],
-						this.geojson.features[0].geometry.coordinates[1],
-						marker.geometry.coordinates[0],
-						marker.geometry.coordinates[1],
-						marker.properties.name
+						this.userLocations[0].coordinates[0],
+						this.userLocations[0].coordinates[1],
+						marker.coordinates[0],
+						marker.coordinates[1],
+						marker.username
 					);
 				});
 			},
@@ -301,12 +448,12 @@
 			},
 
 			removeAllRoutes() {
-				this.geojson.features.forEach((marker) => {
-					if (this.map.getLayer(marker.properties.name)) {
-						this.map.removeLayer(marker.properties.name);
+				this.userLocations.forEach((marker) => {
+					if (this.map.getLayer(marker.username)) {
+						this.map.removeLayer(marker.username);
 					}
-					if (this.map.getSource(marker.properties.name)) {
-						this.map.removeSource(marker.properties.name);
+					if (this.map.getSource(marker.username)) {
+						this.map.removeSource(marker.username);
 					}
 				});
 			},
@@ -349,12 +496,12 @@
 	#map {
 		margin: auto;
 		width: 100%;
-		height: 100vh;
+		height: 80vh;
+		margin-bottom: -50px;
 	}
 
 	.loading {
 		width: 100%;
-		height: 100vh;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -362,15 +509,31 @@
 	}
 
 	.loadingDiv {
-		margin-top: -100px;
+		margin-top: 70px;
 	}
 
 	.loadingAnim h2 {
-		font-size: 20px;
-		color: #1f2a53;
+		font-size: 18px;
+		color: white;
 	}
 
 	.loadingAnim .iconDiv img {
 		width: 100px;
+	}
+
+	.sectionHeader {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 10px 20px;
+	}
+
+	.marker {
+		background-image: url("https://placekitten.com/g/40/40/");
+		width: 40px;
+		height: 40px;
+		background-size: 100%;
+		border-radius: 100%;
+		cursor: pointer;
 	}
 </style>
