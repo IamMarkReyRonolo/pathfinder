@@ -8,7 +8,12 @@
 			<v-btn rounded small color="#c51ad5" dark>
 				{{ this.userLocations.length }} people responded.
 			</v-btn>
-			<v-btn @click="showAllRoutes" rounded>Show Routes</v-btn>
+			<v-btn @click="showAllRoutes" rounded v-if="!showTheRoutes"
+				>Show Routes</v-btn
+			>
+			<v-btn @click="removeAllRoutes" rounded v-if="showTheRoutes"
+				>Hide Routes</v-btn
+			>
 			<!-- <v-btn @click="showAllRoutes">Hide Routes</v-btn> -->
 			{{ listenForUsers }}
 		</div>
@@ -98,6 +103,7 @@
 				userLocations: [],
 				currentMarkers: [],
 				updateSource: {},
+				showTheRoutes: false,
 			};
 		},
 
@@ -434,6 +440,7 @@
 						marker.username
 					);
 				});
+				this.showTheRoutes = true;
 			},
 
 			showAllRoutesToCustomRoute(coordinates) {
@@ -459,6 +466,7 @@
 						this.map.removeSource(marker.username);
 					}
 				});
+				this.showTheRoutes = false;
 			},
 
 			addRoute() {
