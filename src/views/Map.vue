@@ -8,10 +8,10 @@
 			<v-btn rounded small color="#c51ad5" dark>
 				{{ this.userLocations.length }} people responded.
 			</v-btn>
-			<v-btn @click="showAllRoutes" rounded v-if="!showTheRoutes"
+			<v-btn @click="showAllRoutes" rounded v-if="!showTheRoutes" small
 				>Show Routes</v-btn
 			>
-			<v-btn @click="removeAllRoutes" rounded v-if="showTheRoutes"
+			<v-btn @click="removeAllRoutes" rounded v-if="showTheRoutes" small
 				>Hide Routes</v-btn
 			>
 			<!-- <v-btn @click="showAllRoutes">Hide Routes</v-btn> -->
