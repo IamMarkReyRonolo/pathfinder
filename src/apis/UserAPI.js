@@ -1,5 +1,8 @@
 import axios from "axios";
 const url = "https://pathfinder-server.onrender.com/users";
+// const url = "http://localhost:8000/users";
+axios.defaults.headers.common["Authorization"] =
+	"Bearer " + JSON.parse(localStorage.getItem("token"));
 
 export default class API {
 	async login(credentials) {
@@ -28,6 +31,8 @@ export default class API {
 	}
 
 	async checkForActiveFindMe() {
+		axios.defaults.headers.common["Authorization"] =
+			"Bearer " + JSON.parse(localStorage.getItem("token"));
 		const user = await axios.get(url + "/check_for_active_find_me");
 		return user.data;
 	}

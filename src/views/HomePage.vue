@@ -85,6 +85,7 @@
 <script>
 	import { useUserStore } from "../store/UserStore";
 	import Snackbar from "../components/GeneralModals/Snackbar.vue";
+	import db from "../db";
 	export default {
 		components: {
 			Snackbar,
@@ -128,6 +129,20 @@
 						);
 						console.log(result.room);
 						this.userStore.findMeRoomData = result.room;
+						const database = db.database();
+						db.database()
+							.ref("Users/" + this.userStore.user.uuid + "/username")
+							.set(this.userStore.user.full_name);
+						const fieldRef = database.ref(
+							"Users/" +
+								this.userStore.user.uuid +
+								"/numberOfTimesRespondedToFindEvents"
+						);
+
+						fieldRef.transaction(function (currentValue) {
+							return (currentValue || 0) + 1;
+						});
+
 						this.$router.push("/room");
 					} catch (error) {
 						console.log(error);
@@ -141,6 +156,7 @@
 			clickCheck() {
 				try {
 					this.userStore.findMeRoomData = this.room;
+					console.log(this.userStore.findMeRoomData);
 					this.$router.push("/room");
 				} catch (error) {
 					console.log(error);

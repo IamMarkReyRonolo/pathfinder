@@ -78,8 +78,22 @@
 	export default {
 		components: { GroupChat, TerminateRoomModal, Snackbar, Map },
 		async created() {
-			this.roomData = this.userStore.findMeRoomData;
-			console.log(this.roomData);
+			try {
+				this.loading = true;
+				this.fetched = false;
+				this.roomData = this.userStore.findMeRoomData;
+				console.log(this.roomData);
+				if (this.roomData.room_code == null) {
+					this.$router.push("/home");
+				}
+
+				this.loading = false;
+				this.fetched = true;
+			} catch (error) {
+				this.loading = false;
+				this.fetched = false;
+				this.error = true;
+			}
 		},
 		data: () => ({
 			userStore: useUserStore(),

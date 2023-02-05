@@ -80,6 +80,7 @@
 <script>
 	import AddConnectionComponents from "../components/ConnectionPageComponents/AddConnectionComponent.vue";
 	import { useUserStore } from "../store/UserStore";
+	import db from "../db";
 	export default {
 		created() {
 			try {
@@ -117,6 +118,19 @@
 					console.log(result);
 					this.userStore.findMeRoomData.room_code = result.notification.code;
 					this.userStore.findMeRoomData.user_id = "host";
+					const database = db.database();
+					db.database()
+						.ref("Users/" + this.userStore.user.uuid + "/username")
+						.set(this.userStore.user.full_name);
+					const fieldRef = database.ref(
+						"Users/" +
+							this.userStore.user.uuid +
+							"/numberOfTimesActivatedFindEvent"
+					);
+
+					fieldRef.transaction(function (currentValue) {
+						return (currentValue || 0) + 1;
+					});
 					this.$router.push("/room");
 				} catch (error) {
 					console.log(error);

@@ -104,6 +104,18 @@
 				};
 				messagesRef.push(message);
 				this.inputMessage = "";
+
+				const database = db.database();
+				const fieldRef = database.ref(
+					"Users/" +
+						this.userStore.user.uuid +
+						"/countOfSentMessagesInRooms/" +
+						this.sessionCode
+				);
+
+				fieldRef.transaction(function (currentValue) {
+					return (currentValue || 0) + 1;
+				});
 			},
 
 			async DeleteGroupChat() {
